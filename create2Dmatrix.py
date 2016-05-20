@@ -6,9 +6,9 @@ Create 2D Matrix bitmpap from Ferag String.
 import re
 import os.path
 import argparse
+import codecs
 from PIL import Image
 
-MATRIXFILE = "2DMatrix.bmp"
 PATTERN = r"\{SK\|(\d+)\|(\d+)\|(\d+)\|([\s\S]+)\}"
 FONT = []
 
@@ -38,7 +38,7 @@ def create_font():
 Read a file given as parameter or just try to open file with default name.
 """
 if os.path.exists(args.file):
-    print("converting Matrix '%s' to '%s'" % (args.file, MATRIXFILE))
+    print("converting Matrix '%s'" % (args.file))
 else:
     print("file '%s' does not exist" % args.file)
     quit()
@@ -52,17 +52,29 @@ Each module (1 square of the 2D Matrix) consists of 4 drops.
 Ferag String format for 2D Matrix:
 {SK|<LEN>|<HEIGHT>|<WIDTH>|<BYTE DATA>}
 """
-with open(args.file, 'rt') as matrixfile:
+with open(args.file, 'rb') as matrixfile:
+#with codecs.open(args.file, 'r', 'utf-8') as matrixfile:
     matrixstr = matrixfile.read()
-    matrixfile.close()
-    m = re.search(PATTERN, matrixstr)
+    #print(matrixstr)
+    #m = re.search(PATTERN, matrixstr.decode('utf-8'))
 
-    if m is not None and len(m.groups()) == 4:
-        data = m.group(4)
-        width = int(m.group(3))
-        height = int(m.group(2))
-        length = int(m.group(1))
+    if (matrixstr[0] == ord('{') and matrixstr[-2] == ord('}')):
+        content = matrixstr.split(b'|')
+        #print(content)
+        length = int(content[1])
+        height = int(content[2])
+        width = int(content[3])
+        # get data bytes remove '}\n' at the end
+        data = content[4:]
+        data = b''.join(data)[:-2]
+
+    #if m is not None and len(m.groups()) == 4:
+        #data = m.group(4)
+        #width = int(m.group(3))
+        #height = int(m.group(2))
+        #length = int(m.group(1))
         print("length %d height %d width %d" % (length, height, width))
+        print(data)
         matrix = Image.new('RGB', (2*width, 2*height), "white")
 
         top_line = ""
@@ -71,16 +83,18 @@ with open(args.file, 'rt') as matrixfile:
         # create list with separated rows to draw
         # a row consists of 'width' characters
         matrixrowlist = [data[i:i+width] for i in range(0, length, width)]
+        #matrixrowlist = [data[i:i+height] for i in range(0, length, height)]
 
         for offset, row in enumerate(matrixrowlist):
-            print(len(row))
+            #print(len(row))
+            #print(row)
             for i, char in enumerate(row):
                 # first line of row
-                top = ord(char) & 0x0f
-                # second line of row
-                bot = (ord(char) >> 4) & 0x0f
+                top = char & 0x0f
+                bot = (char >> 4) & 0x0f
                 top_line += chr(top + ord('A'))
                 bot_line += chr(bot + ord('A'))
+                #print("%c %d %d" % (char, top, bot))
                 matrix.paste(FONT[top], (2*i, 16*offset))
                 matrix.paste(FONT[bot], (2*i, 16*offset + 8))
 
@@ -89,7 +103,7 @@ with open(args.file, 'rt') as matrixfile:
             top_line = ""
             bot_line = ""
 
-        matrix.save(MATRIXFILE)
+        matrix.save(args.file.replace('.bin', '.bmp'))
 
     else:
         print('Wrong format')
