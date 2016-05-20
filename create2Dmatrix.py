@@ -31,6 +31,7 @@ def create_font():
             if bits[bit] == '1':
                 img.paste(dot, (0, (2*bit)))
 
+        img.save("bmp/%c.bmp" % chr(halfchar + ord('A')))
         FONT.append(img)
 
 """
@@ -61,22 +62,32 @@ with open(args.file, 'rt') as matrixfile:
         width = int(m.group(3))
         height = int(m.group(2))
         length = int(m.group(1))
-        print("width %d height %d length %d" % (width, height, length))
+        print("length %d height %d width %d" % (length, height, width))
         matrix = Image.new('RGB', (2*width, 2*height), "white")
+
+        top_line = ""
+        bot_line = ""
 
         # create list with separated rows to draw
         # a row consists of 'width' characters
-        matrixrowlist = [data[i:i+height] for i in range(0, length, height)]
+        matrixrowlist = [data[i:i+width] for i in range(0, length, width)]
 
         for offset, row in enumerate(matrixrowlist):
+            print(len(row))
             for i, char in enumerate(row):
                 # first line of row
-                low = ord(char) & 0x0f
+                top = ord(char) & 0x0f
                 # second line of row
-                high = (ord(char) >> 4) & 0x0f
-                #print("c=%s low=%d high=%d" % (c, low, high))
-                matrix.paste(FONT[low], (2*i, 16*offset))
-                matrix.paste(FONT[high], (2*i, 16*offset + 8))
+                bot = (ord(char) >> 4) & 0x0f
+                top_line += chr(top + ord('A'))
+                bot_line += chr(bot + ord('A'))
+                matrix.paste(FONT[top], (2*i, 16*offset))
+                matrix.paste(FONT[bot], (2*i, 16*offset + 8))
+
+            print(top_line)
+            print(bot_line)
+            top_line = ""
+            bot_line = ""
 
         matrix.save(MATRIXFILE)
 
