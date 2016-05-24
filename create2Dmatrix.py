@@ -82,14 +82,14 @@ with open(args.file, 'rb') as matrixfile:
 
         # create list with separated rows to draw
         # a row consists of 'width' characters
-        matrixrowlist = [data[i:i+width] for i in range(0, length, width)]
-        #matrixrowlist = [data[i:i+height] for i in range(0, length, height)]
+        # filter out empty list
+        matrixrowlist = filter(None, [data[i:i+width] for i in range(0, length, width)])
+        #matrixrowlist = filter(None, [data[i:i+height] for i in range(0, length, height)])
 
         for offset, row in enumerate(matrixrowlist):
             #print(len(row))
             #print(row)
             for i, char in enumerate(row):
-                # first line of row
                 top = char & 0x0f
                 bot = (char >> 4) & 0x0f
                 top_line += chr(top + ord('A'))
